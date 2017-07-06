@@ -13,10 +13,12 @@ type Exporter struct {
 }
 
 func (exporter *Exporter) Create() error {
+	//TODO(emepetres)
 	return nil
 }
 
 func (exporter *Exporter) Destroy() error {
+	//TODO(emepetres)
 	return nil
 }
 
@@ -142,6 +144,7 @@ func (expQ *ExporterQueue) Remove(exp *Exporter) error {
 }
 
 func (expQ *ExporterQueue) Heal() error {
+	//TODO(emepetres)
 	return nil
 }
 

@@ -1,18 +1,67 @@
 package main
 
 import (
+	"bufio"
+	"encoding/json"
 	"errors"
+	"io"
+	"io/ioutil"
+	"os"
+	"sync"
 )
 
 type Memory struct {
+	sync.Mutex
 	exporterQueues map[string]*ExporterQueue
 }
 
 func NewMemory() *Memory {
-	// TODO(emepetres): Load persistent memory json file
 	return &Memory{
 		exporterQueues: make(map[string]*ExporterQueue, 0),
 	}
+}
+
+func (memo *Memory) Encode(w io.Writer) error {
+	return json.NewEncoder(w).Encode(memo.exporterQueues)
+}
+
+func (memo *Memory) LoadFromFile(filename string) error {
+	raw, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(raw, &memo.exporterQueues)
+	if err != nil {
+		return err
+	}
+
+	for _, queue := range memo.exporterQueues {
+		if queue.IsUP() {
+			queue.Heal()
+		}
+	}
+
+	return err
+}
+
+func (memo *Memory) SaveToFile(filename string) error {
+	var file *os.File
+	var err error
+	if _, err = os.Stat("filename"); os.IsNotExist(err) {
+		file, err = os.Create(filename)
+		if err != nil {
+			return err
+		}
+	} else {
+		file, err = os.Open(filename)
+	}
+
+	defer file.Close()
+	w := bufio.NewWriter(file)
+	err = memo.Encode(w)
+	w.Flush()
+	return err
 }
 
 func (memo *Memory) AddExporterInstance(exporter *Exporter) error {
@@ -26,7 +75,6 @@ func (memo *Memory) AddExporterInstance(exporter *Exporter) error {
 	}
 
 	return queue.Add(exporter)
-	// TODO(emepetres): Save persistent memory json file
 }
 
 func (memo *Memory) RemoveExporterInstance(exporter *Exporter) error {
@@ -46,5 +94,4 @@ func (memo *Memory) RemoveExporterInstance(exporter *Exporter) error {
 		}
 	}
 	return err
-	// TODO(emepetres): Save persistent memory json file
 }
