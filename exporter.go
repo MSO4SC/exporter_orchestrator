@@ -17,6 +17,11 @@ func (exporter *Exporter) Create() error {
 	return nil
 }
 
+func (exporter *Exporter) Heal() error {
+	//TODO(emepetres)
+	return nil
+}
+
 func (exporter *Exporter) Destroy() error {
 	//TODO(emepetres)
 	return nil
@@ -68,6 +73,15 @@ func (expQ *ExporterQueue) Down() error {
 		return nil
 	}
 	err := expQ.getCurrentExporter().Destroy()
+	expQ.Exec = (err == nil)
+	return err
+}
+
+func (expQ *ExporterQueue) Heal() error {
+	if !expQ.Exec || (expQ.Dependencies == 0 && !expQ.Persistent) {
+		return nil
+	}
+	err := expQ.getCurrentExporter().Heal()
 	expQ.Exec = (err == nil)
 	return err
 }
@@ -141,11 +155,6 @@ func (expQ *ExporterQueue) Remove(exp *Exporter) error {
 	}
 	return nil
 
-}
-
-func (expQ *ExporterQueue) Heal() error {
-	//TODO(emepetres)
-	return nil
 }
 
 func (expQ *ExporterQueue) getCurrentExporter() *Exporter {
