@@ -14,4 +14,5 @@
 .glide/
 
 # Debug
+debug
 data.json

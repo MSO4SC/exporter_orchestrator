@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	//	"github.com/gorilla/mux"
+	"time"
 )
 
 const (
@@ -19,6 +20,7 @@ var (
 func init() {
 	memory = NewMemory()
 	memory.LoadFromFile(filename)
+	memory.StartHealing(30 * time.Second)
 }
 
 func Index(w http.ResponseWriter, r *http.Request) {

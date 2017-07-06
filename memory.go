@@ -4,20 +4,24 @@ import (
 	"bufio"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"sync"
+	"time"
 )
 
 type Memory struct {
-	sync.Mutex
 	exporterQueues map[string]*ExporterQueue
+	quitHealing    chan struct{}
+	sync.Mutex
 }
 
 func NewMemory() *Memory {
 	return &Memory{
 		exporterQueues: make(map[string]*ExporterQueue, 0),
+		quitHealing:    make(chan struct{}),
 	}
 }
 
@@ -94,4 +98,27 @@ func (memo *Memory) RemoveExporterInstance(exporter *Exporter) error {
 		}
 	}
 	return err
+}
+
+// StartHealing starts the process that execute the heal operation
+// over every exporter, every d duration.
+// To finish do close(memory.quitHealing)
+func (memo *Memory) StartHealing(d time.Duration) {
+	ticker := time.NewTicker(d)
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				memo.Lock()
+				for _, queue := range memo.exporterQueues {
+					queue.Heal()
+				}
+				fmt.Println("Healed!")
+				memo.Unlock()
+			case <-memo.quitHealing:
+				ticker.Stop()
+				return
+			}
+		}
+	}()
 }
