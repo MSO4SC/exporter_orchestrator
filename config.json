@@ -1,0 +1,9 @@
+{
+    "storageFile": "data.json",
+    "exporters": {
+        "slurm": {
+            "create": "scripts/create_slurm_exporter.sh",
+            "destroy": "scripts/destroy_slurm_exporter.sh"
+        }
+    }
+}

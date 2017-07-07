@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -113,7 +112,7 @@ func (memo *Memory) StartHealing(d time.Duration) {
 				for _, queue := range memo.exporterQueues {
 					queue.Heal()
 				}
-				fmt.Println("Healed!")
+				DEBUG("Healed!")
 				memo.Unlock()
 			case <-memo.quitHealing:
 				ticker.Stop()

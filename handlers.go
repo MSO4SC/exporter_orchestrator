@@ -9,40 +9,43 @@ import (
 	"time"
 )
 
-const (
-	filename = "data.json"
-)
-
 var (
 	memory *Memory
+	config = LoadConfig()
 )
 
 func init() {
 	memory = NewMemory()
-	memory.LoadFromFile(filename)
+	memory.LoadFromFile(config.StorageFileName)
 	memory.StartHealing(30 * time.Second)
 }
 
 func Index(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusOK)
 
 	memory.Lock()
 	defer memory.Unlock()
 	if err := memory.Encode(w); err != nil {
-		panic(err) //FIXME(emepetres) handle panic errors with http responses
+		encodeError(w, http.StatusNotFound, err)
+		ERROR(err.Error())
+		return
 	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func ExportersIndex(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusOK)
 
 	memory.Lock()
 	defer memory.Unlock()
 	if err := memory.Encode(w); err != nil {
-		panic(err) //FIXME(emepetres) handle panic errors with http responses
+		encodeError(w, http.StatusNotFound, err)
+		ERROR(err.Error())
+		return
 	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 /*
@@ -67,30 +70,7 @@ curl -X POST \
 }'
 */
 func AddExporter(w http.ResponseWriter, r *http.Request) {
-	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
-	if err != nil {
-		panic(err) //FIXME(emepetres) handle panic errors with http responses
-	}
-	if err := r.Body.Close(); err != nil {
-		panic(err) //FIXME(emepetres) handle panic errors with http responses
-	}
-	var exporter Exporter
-	if err := json.Unmarshal(body, &exporter); err != nil {
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(http.StatusUnprocessableEntity) // unprocessable entity
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			panic(err) //FIXME(emepetres) handle panic errors with http responses
-		}
-	}
-
-	memory.Lock()
-	defer memory.Unlock()
-	if err := memory.AddExporterInstance(&exporter); err == nil {
-		w.WriteHeader(http.StatusCreated)
-		memory.SaveToFile(filename)
-	} else {
-		w.WriteHeader(http.StatusInternalServerError) // FIXME(emepetres): support different errors
-	}
+	modifyExporter(w, r, memory.AddExporterInstance, http.StatusCreated)
 }
 
 /*
@@ -115,31 +95,52 @@ curl -X POST \
 }'
 */
 func RemoveExporter(w http.ResponseWriter, r *http.Request) {
+	modifyExporter(w, r, memory.RemoveExporterInstance, http.StatusOK)
+}
+
+func modifyExporter(w http.ResponseWriter,
+	r *http.Request,
+	modifier func(*Exporter) error,
+	successStatus int) {
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
-		panic(err) //FIXME(emepetres) handle panic errors with http responses
+		encodeError(w, http.StatusNotFound, err)
+		ERROR(err.Error())
+		return
 	}
 	if err := r.Body.Close(); err != nil {
-		panic(err) //FIXME(emepetres) handle panic errors with http responses
+		encodeError(w, http.StatusNotFound, err)
+		ERROR(err.Error())
+		return
 	}
 
 	var exporter Exporter
 	if err := json.Unmarshal(body, &exporter); err != nil {
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(http.StatusUnprocessableEntity) // unprocessable entity
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			panic(err) //FIXME(emepetres) handle panic errors with http responses
-		}
+		encodeError(w, http.StatusUnprocessableEntity, err)
+		ERROR(err.Error())
+		return
 	}
 
 	memory.Lock()
 	defer memory.Unlock()
-	if err := memory.RemoveExporterInstance(&exporter); err == nil {
-		w.WriteHeader(http.StatusOK)
-		memory.SaveToFile(filename)
-	} else {
-		w.WriteHeader(http.StatusInternalServerError) // FIXME(emepetres): support different errors
+	if err := modifier(&exporter); err == nil {
+		encodeError(w, http.StatusInternalServerError, err)
+		ERROR(err.Error())
+		return
 	}
+
+	w.WriteHeader(successStatus)
+	memory.SaveToFile(config.StorageFileName)
+}
+
+func encodeError(w http.ResponseWriter, httpCode int, err error) {
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	if err := json.NewEncoder(w).Encode(jsonErr{Code: httpCode, Text: err.Error()}); err != nil {
+		panic(err)
+	}
+	w.WriteHeader(httpCode)
 }
 
 // func TodoShow(w http.ResponseWriter, r *http.Request) {

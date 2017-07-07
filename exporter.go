@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"os/exec"
 	"reflect"
 )
 
@@ -13,8 +14,11 @@ type Exporter struct {
 }
 
 func (exporter *Exporter) Create() error {
-	//TODO(emepetres)
-	return nil
+	cmd := exec.Command(config.ExportersScripts[exporter.Type]["create"],
+		exporter.Args...)
+	err := cmd.Run()
+	ERRORe(err)
+	return err
 }
 
 func (exporter *Exporter) Heal() error {
@@ -23,8 +27,11 @@ func (exporter *Exporter) Heal() error {
 }
 
 func (exporter *Exporter) Destroy() error {
-	//TODO(emepetres)
-	return nil
+	cmd := exec.Command(config.ExportersScripts[exporter.Type]["destroy"],
+		exporter.Args...)
+	err := cmd.Run()
+	ERRORe(err)
+	return err
 }
 
 type ExporterQueue struct {
@@ -73,7 +80,7 @@ func (expQ *ExporterQueue) Down() error {
 		return nil
 	}
 	err := expQ.getCurrentExporter().Destroy()
-	expQ.Exec = (err == nil)
+	expQ.Exec = (err != nil)
 	return err
 }
 
