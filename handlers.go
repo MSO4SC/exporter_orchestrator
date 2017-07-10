@@ -125,7 +125,7 @@ func modifyExporter(w http.ResponseWriter,
 
 	memory.Lock()
 	defer memory.Unlock()
-	if err := modifier(&exporter); err == nil {
+	if err := modifier(&exporter); err != nil {
 		encodeError(w, http.StatusInternalServerError, err)
 		ERROR(err.Error())
 		return
