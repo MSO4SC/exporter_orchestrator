@@ -7,15 +7,20 @@ import (
 )
 
 type Exporter struct {
-	Host       string   `json:"host"`
-	Type       string   `json:"type"`
-	Persistent bool     `json:"persistent"`
-	Args       []string `json:"args"`
+	Host       string            `json:"host"`
+	Type       string            `json:"type"`
+	Persistent bool              `json:"persistent"`
+	Args       map[string]string `json:"args"`
 }
 
 func (exporter *Exporter) Create() error {
 	cmd := exec.Command(config.ExportersScripts[exporter.Type]["create"],
-		exporter.Args...)
+		exporter.Args["listen-port"],
+		exporter.Host,
+		exporter.Args["user"],
+		exporter.Args["pass"],
+		exporter.Args["tz"],
+		exporter.Args["log"])
 	err := cmd.Run()
 	ERRORe(err)
 	return err
@@ -28,19 +33,24 @@ func (exporter *Exporter) Heal() error {
 
 func (exporter *Exporter) Destroy() error {
 	cmd := exec.Command(config.ExportersScripts[exporter.Type]["destroy"],
-		exporter.Args...)
+		exporter.Args["listen-port"],
+		exporter.Host,
+		exporter.Args["user"],
+		exporter.Args["pass"],
+		exporter.Args["tz"],
+		exporter.Args["log"])
 	err := cmd.Run()
 	ERRORe(err)
 	return err
 }
 
 type ExporterQueue struct {
-	Host         string     `json:"host"`
-	Type         string     `json:"type"`
-	Persistent   bool       `json:"persistent"`
-	Dependencies uint       `json:"dep"`
-	ArgsQueue    [][]string `json:"queue"`
-	Exec         bool       `json:"Exec"`
+	Host         string              `json:"host"`
+	Type         string              `json:"type"`
+	Persistent   bool                `json:"persistent"`
+	Dependencies uint                `json:"dep"`
+	ArgsQueue    []map[string]string `json:"queue"`
+	Exec         bool                `json:"Exec"`
 }
 
 func (exporter *Exporter) belongsToQueue(queue *ExporterQueue) bool {
@@ -57,7 +67,7 @@ func NewExporterQueue(exp *Exporter) *ExporterQueue {
 		Type:         exp.Type,
 		Persistent:   exp.Persistent,
 		Dependencies: 1,
-		ArgsQueue:    [][]string{exp.Args},
+		ArgsQueue:    []map[string]string{exp.Args},
 		Exec:         false,
 	}
 }
@@ -141,7 +151,7 @@ func (expQ *ExporterQueue) Remove(exp *Exporter) error {
 		if err == nil {
 			expQ.Dependencies--
 			if expQ.Dependencies == 0 {
-				expQ.ArgsQueue = make([][]string, 0)
+				expQ.ArgsQueue = make([]map[string]string, 0)
 			} else {
 				expQ.ArgsQueue = expQ.ArgsQueue[1:]
 			}
@@ -152,7 +162,7 @@ func (expQ *ExporterQueue) Remove(exp *Exporter) error {
 	// Remove not running instance on a non persistent exporter
 	expQ.Dependencies--
 	if expQ.Dependencies == 0 {
-		expQ.ArgsQueue = make([][]string, 0)
+		expQ.ArgsQueue = make([]map[string]string, 0)
 	} else {
 		if i < (len(expQ.ArgsQueue) - 1) {
 			expQ.ArgsQueue = append(expQ.ArgsQueue[:i], expQ.ArgsQueue[i+1:]...)
