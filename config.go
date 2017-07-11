@@ -6,8 +6,10 @@ import (
 )
 
 type Config struct {
-	StorageFileName  string                       `json:"storageFile"`
-	ExportersScripts map[string]map[string]string `json:"exporters"`
+	StorageFileName       string                       `json:"storageFile"`
+	Monitor               string                       `json:"monitor"`
+	ExportersScripts      map[string]map[string]string `json:"exporters"`
+	WaitBeforeHealSeconds int64                        `json:"healWaitSeconds"`
 }
 
 func LoadConfig() *Config {

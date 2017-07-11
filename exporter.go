@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os/exec"
 	"reflect"
+	"time"
 )
 
 type Exporter struct {
@@ -22,13 +23,10 @@ func (exporter *Exporter) Create() error {
 		exporter.Args["tz"],
 		exporter.Args["log"])
 	err := cmd.Run()
-	ERRORe(err)
+	if err != nil {
+		ERROR(err.Error())
+	}
 	return err
-}
-
-func (exporter *Exporter) Heal() error {
-	//TODO(emepetres)
-	return nil
 }
 
 func (exporter *Exporter) Destroy() error {
@@ -40,7 +38,9 @@ func (exporter *Exporter) Destroy() error {
 		exporter.Args["tz"],
 		exporter.Args["log"])
 	err := cmd.Run()
-	ERRORe(err)
+	if err != nil {
+		ERROR(err.Error())
+	}
 	return err
 }
 
@@ -51,6 +51,7 @@ type ExporterQueue struct {
 	Dependencies uint                `json:"dep"`
 	ArgsQueue    []map[string]string `json:"queue"`
 	Exec         bool                `json:"Exec"`
+	Start        int64               `json:"start"`
 }
 
 func (exporter *Exporter) belongsToQueue(queue *ExporterQueue) bool {
@@ -82,6 +83,9 @@ func (expQ *ExporterQueue) Up() error {
 	}
 	err := expQ.getCurrentExporter().Create()
 	expQ.Exec = (err == nil)
+	if expQ.IsUP() {
+		expQ.Start = time.Now().Unix()
+	}
 	return err
 }
 
@@ -94,16 +98,18 @@ func (expQ *ExporterQueue) Down() error {
 	return err
 }
 
-func (expQ *ExporterQueue) Heal() error {
-	if !expQ.IsUP() {
-		return expQ.Up()
-	}
-	if !expQ.Exec || (expQ.Dependencies == 0 && !expQ.Persistent) {
+func (expQ *ExporterQueue) Heal(exists, isUp bool) error {
+	if time.Now().Unix()-expQ.Start < config.WaitBeforeHealSeconds {
 		return nil
 	}
-	err := expQ.getCurrentExporter().Heal()
-	expQ.Exec = (err == nil)
-	return err
+
+	if !expQ.IsUP() || !exists || !isUp {
+		expQ.Exec = false
+		WARN("healing " + expQ.Host + "...")
+		return expQ.Up()
+	}
+
+	return nil
 }
 
 // Add adds a new exporter to the queue.

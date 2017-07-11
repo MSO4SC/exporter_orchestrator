@@ -21,6 +21,9 @@ func init() {
 }
 
 func Index(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+
 	memory.Lock()
 	defer memory.Unlock()
 	if err := memory.Encode(w); err != nil {
@@ -28,12 +31,12 @@ func Index(w http.ResponseWriter, r *http.Request) {
 		ERROR(err.Error())
 		return
 	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 }
 
 func ExportersIndex(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+
 	memory.Lock()
 	defer memory.Unlock()
 	if err := memory.Encode(w); err != nil {
@@ -41,9 +44,6 @@ func ExportersIndex(w http.ResponseWriter, r *http.Request) {
 		ERROR(err.Error())
 		return
 	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 }
 
 /*

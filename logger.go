@@ -18,16 +18,12 @@ var (
 	debug   *log.Logger
 
 	ERROR  func(string)
-	ERRORe func(error)
 	ERRORf func(string, ...interface{})
 	INFO   func(string)
-	INFOe  func(error)
 	INFOf  func(string, ...interface{})
 	WARN   func(string)
-	WARNe  func(error)
 	WARNf  func(string, ...interface{})
 	DEBUG  func(string)
-	DEBUGe func(error)
 	DEBUGf func(string, ...interface{})
 )
 
@@ -49,11 +45,6 @@ func init() {
 		log.Ldate|log.Ltime|log.Lshortfile)
 
 	ERROR = func(msg string) { _error.Println(msg) }
-	ERRORe = func(err error) {
-		if err != nil {
-			_error.Println(err.Error())
-		}
-	}
 	ERRORf = func(msg string, v ...interface{}) { _error.Printf(msg, v) }
 	SetLogLevel("info")
 }
@@ -63,67 +54,31 @@ func SetLogLevel(l string) {
 	switch level {
 	case "error":
 		INFO = func(string) {}
-		INFOe = func(error) {}
 		INFOf = func(string, ...interface{}) {}
 		WARN = func(string) {}
-		WARNe = func(error) {}
 		WARNf = func(string, ...interface{}) {}
 		DEBUG = func(string) {}
-		DEBUGe = func(error) {}
 		DEBUGf = func(string, ...interface{}) {}
 	case "info":
 		INFO = func(msg string) { info.Println(msg) }
-		INFOe = func(err error) {
-			if err != nil {
-				info.Println(err.Error())
-			}
-		}
 		INFOf = func(msg string, v ...interface{}) { info.Printf(msg, v) }
 		WARN = func(string) {}
-		WARNe = func(error) {}
 		WARNf = func(string, ...interface{}) {}
 		DEBUG = func(string) {}
-		DEBUGe = func(error) {}
 		DEBUGf = func(string, ...interface{}) {}
 	case "warn":
 		INFO = func(msg string) { info.Println(msg) }
-		INFOe = func(err error) {
-			if err != nil {
-				info.Println(err.Error())
-			}
-		}
 		INFOf = func(msg string, v ...interface{}) { info.Printf(msg, v) }
 		WARN = func(msg string) { warning.Println(msg) }
-		WARNe = func(err error) {
-			if err != nil {
-				warning.Println(err.Error())
-			}
-		}
 		WARNf = func(msg string, v ...interface{}) { warning.Printf(msg, v) }
 		DEBUG = func(string) {}
-		DEBUGe = func(error) {}
 		DEBUGf = func(string, ...interface{}) {}
 	case "debug":
 		INFO = func(msg string) { info.Println(msg) }
-		INFOe = func(err error) {
-			if err != nil {
-				info.Println(err.Error())
-			}
-		}
 		INFOf = func(msg string, v ...interface{}) { info.Printf(msg, v) }
 		WARN = func(msg string) { warning.Println(msg) }
-		WARNe = func(err error) {
-			if err != nil {
-				warning.Println(err.Error())
-			}
-		}
 		WARNf = func(msg string, v ...interface{}) { warning.Printf(msg, v) }
 		DEBUG = func(msg string) { debug.Println(msg) }
-		DEBUGe = func(err error) {
-			if err != nil {
-				debug.Println(err.Error())
-			}
-		}
 		DEBUGf = func(msg string, v ...interface{}) { debug.Printf(msg, v) }
 	default:
 		ERRORf("Log level \"%s\" cannot be recognized.", level)

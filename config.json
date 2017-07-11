@@ -1,5 +1,7 @@
 {
     "storageFile": "data.json",
+    "monitor": "192.168.56.22:9090",
+    "healWaitSeconds": 30,
     "exporters": {
         "slurm": {
             "create": "scripts/create_slurm_exporter.sh",

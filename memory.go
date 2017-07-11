@@ -6,7 +6,9 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -15,6 +17,12 @@ type Memory struct {
 	exporterQueues map[string]*ExporterQueue
 	quitHealing    chan struct{}
 	sync.Mutex
+}
+
+var healingURL string
+
+func init() {
+	healingURL = "http://" + config.Monitor + "/api/v1/query?query=up"
 }
 
 func NewMemory() *Memory {
@@ -37,12 +45,6 @@ func (memo *Memory) LoadFromFile(filename string) error {
 	err = json.Unmarshal(raw, &memo.exporterQueues)
 	if err != nil {
 		return err
-	}
-
-	for _, queue := range memo.exporterQueues {
-		if queue.IsUP() {
-			queue.Heal()
-		}
 	}
 
 	return err
@@ -108,9 +110,36 @@ func (memo *Memory) StartHealing(d time.Duration) {
 		for {
 			select {
 			case <-ticker.C:
+				response, err := http.Get(healingURL)
+				if err != nil {
+					ERROR("healing failed: " + err.Error())
+					continue
+				}
+				var decoded map[string]interface{}
+				if err := json.NewDecoder(response.Body).Decode(&decoded); err != nil {
+					ERROR("healing failed: " + err.Error())
+					continue
+				}
+				if err := response.Body.Close(); err != nil {
+					ERROR("healing failed: " + err.Error())
+					continue
+				}
+
+				result := decoded["data"].(map[string]interface{})["result"].([]interface{})
+				exporters := make(map[string]bool)
+				for _, entry := range result {
+					val, err := strconv.ParseBool(entry.(map[string]interface{})["value"].([]interface{})[1].(string))
+					if err != nil {
+						ERROR("up metric: " + err.Error())
+						continue
+					}
+					exporters[entry.(map[string]interface{})["metric"].(map[string]interface{})["job"].(string)] = val
+				}
+
 				memo.Lock()
 				for _, queue := range memo.exporterQueues {
-					queue.Heal()
+					isUp, exists := exporters[queue.Host]
+					queue.Heal(exists, isUp)
 				}
 				DEBUG("Healed!")
 				memo.Unlock()
