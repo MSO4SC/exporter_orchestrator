@@ -21,8 +21,6 @@ func init() {
 }
 
 func Index(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-
 	memory.Lock()
 	defer memory.Unlock()
 	if err := memory.Encode(w); err != nil {
@@ -32,11 +30,10 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 }
 
 func ExportersIndex(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-
 	memory.Lock()
 	defer memory.Unlock()
 	if err := memory.Encode(w); err != nil {
@@ -46,6 +43,7 @@ func ExportersIndex(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 }
 
 /*
@@ -103,7 +101,6 @@ func modifyExporter(w http.ResponseWriter,
 	modifier func(*Exporter) error,
 	successStatus int) {
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
 		encodeError(w, http.StatusNotFound, err)
@@ -118,7 +115,7 @@ func modifyExporter(w http.ResponseWriter,
 
 	var exporter Exporter
 	if err := json.Unmarshal(body, &exporter); err != nil {
-		encodeError(w, http.StatusUnprocessableEntity, err)
+		encodeError(w, 422, err) // StatusUnprocessableEntity not defined in go 1.6
 		ERROR(err.Error())
 		return
 	}
@@ -132,15 +129,18 @@ func modifyExporter(w http.ResponseWriter,
 	}
 
 	w.WriteHeader(successStatus)
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+
 	memory.SaveToFile(config.StorageFileName)
 }
 
 func encodeError(w http.ResponseWriter, httpCode int, err error) {
+
+	w.WriteHeader(httpCode)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	if err := json.NewEncoder(w).Encode(jsonErr{Code: httpCode, Text: err.Error()}); err != nil {
 		panic(err)
 	}
-	w.WriteHeader(httpCode)
 }
 
 // func TodoShow(w http.ResponseWriter, r *http.Request) {
