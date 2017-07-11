@@ -17,6 +17,18 @@
 COMMAND="slurm_exporter -listen-address $1 -host $2 -ssh-user $3 -ssh-password $4 -countrytz $5 -log.level=$6"
 SESSION=$(echo $2 | sed 's/\./-/g')
 
-tmux new-session -d -s $SESSION
-tmux send-keys "$COMMAND" Enter
+cat > /opt/prometheus/core/targets/$SESSION.json <<- EOM
+[
+  {
+    "targets": ["localhost$1"],
+    "labels": {
+      "env": "canary",
+      "job": "$2"
+    }
+  }
+]
+EOM
+
+#tmux new-session -d -s $SESSION
+#tmux send-keys "$COMMAND" Enter
 

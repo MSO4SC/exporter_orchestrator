@@ -95,6 +95,9 @@ func (expQ *ExporterQueue) Down() error {
 }
 
 func (expQ *ExporterQueue) Heal() error {
+	if !expQ.IsUP() {
+		return expQ.Up()
+	}
 	if !expQ.Exec || (expQ.Dependencies == 0 && !expQ.Persistent) {
 		return nil
 	}

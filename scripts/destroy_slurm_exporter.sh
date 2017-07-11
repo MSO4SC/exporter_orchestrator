@@ -17,5 +17,7 @@
 COMMAND="/home/ubuntu/Projects/go/bin/slurm_exporter -listen-address $1 -host $2 -ssh-user $3 -ssh-password $4 -countrytz $5 -log.level=$6"
 SESSION=$(echo $2 | sed 's/\./-/g')
 
+rm /opt/prometheus/core/targets/$SESSION.json
+
 tmux send-keys -t $SESSION:0 'C-c'
 tmux kill-session -t $SESSION
