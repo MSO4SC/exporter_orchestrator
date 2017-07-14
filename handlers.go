@@ -57,13 +57,14 @@ curl -X POST \
   -H 'postman-token: 1474fc98-cf3a-87fb-31f4-8c0c9236da6c' \
   -d '{
 	"host": "ft2.cesga.es",
-	"type": "slurm",
+	"type": "SLURM",
 	"persistent": true,
 	"args": [
-		"-ssh-user [USER]",
-		"-ssh-password [PASS]",
-		"-countrytz Europe/Madrid",
-		"-log.level=warn"
+		"listen-port": ":8080",
+		"user": "[USER]",
+		"pass": "[PASS]",
+		"tz": "Europe/Madrid",
+		"log": "debug"
 	]
 }'
 */

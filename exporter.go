@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"net"
 	"os/exec"
 	"reflect"
 	"time"
@@ -14,9 +15,9 @@ type Exporter struct {
 	Args       map[string]string `json:"args"`
 }
 
-func (exporter *Exporter) Create() error {
+func (exporter *Exporter) Create(listenPort string) error {
 	cmd := exec.Command(config.ExportersScripts[exporter.Type]["create"],
-		exporter.Args["listen-port"],
+		listenPort,
 		exporter.Host,
 		exporter.Args["user"],
 		exporter.Args["pass"],
@@ -29,9 +30,9 @@ func (exporter *Exporter) Create() error {
 	return err
 }
 
-func (exporter *Exporter) Destroy() error {
+func (exporter *Exporter) Destroy(listenPort string) error {
 	cmd := exec.Command(config.ExportersScripts[exporter.Type]["destroy"],
-		exporter.Args["listen-port"],
+		listenPort,
 		exporter.Host,
 		exporter.Args["user"],
 		exporter.Args["pass"],
@@ -42,16 +43,6 @@ func (exporter *Exporter) Destroy() error {
 		ERROR(err.Error())
 	}
 	return err
-}
-
-type ExporterQueue struct {
-	Host         string              `json:"host"`
-	Type         string              `json:"type"`
-	Persistent   bool                `json:"persistent"`
-	Dependencies uint                `json:"dep"`
-	ArgsQueue    []map[string]string `json:"queue"`
-	Exec         bool                `json:"Exec"`
-	Start        int64               `json:"start"`
 }
 
 func (exporter *Exporter) belongsToQueue(queue *ExporterQueue) bool {
@@ -62,10 +53,22 @@ func (exporter *Exporter) belongsToQueue(queue *ExporterQueue) bool {
 	return true
 }
 
+type ExporterQueue struct {
+	Host         string              `json:"host"`
+	Type         string              `json:"type"`
+	ListenPort   string              `json:"listen-port"`
+	Persistent   bool                `json:"persistent"`
+	Dependencies uint                `json:"dep"`
+	ArgsQueue    []map[string]string `json:"queue"`
+	Exec         bool                `json:"Exec"`
+	Start        int64               `json:"start"`
+}
+
 func NewExporterQueue(exp *Exporter) *ExporterQueue {
 	return &ExporterQueue{
 		Host:         exp.Host,
 		Type:         exp.Type,
+		ListenPort:   getFreePort(),
 		Persistent:   exp.Persistent,
 		Dependencies: 1,
 		ArgsQueue:    []map[string]string{exp.Args},
@@ -81,7 +84,7 @@ func (expQ *ExporterQueue) Up() error {
 	if expQ.Exec {
 		return nil
 	}
-	err := expQ.getCurrentExporter().Create()
+	err := expQ.getCurrentExporter().Create(expQ.ListenPort)
 	expQ.Exec = (err == nil)
 	if expQ.IsUP() {
 		expQ.Start = time.Now().Unix()
@@ -93,7 +96,7 @@ func (expQ *ExporterQueue) Down() error {
 	if !expQ.Exec {
 		return nil
 	}
-	err := expQ.getCurrentExporter().Destroy()
+	err := expQ.getCurrentExporter().Destroy(expQ.ListenPort)
 	expQ.Exec = (err != nil)
 	return err
 }
@@ -193,10 +196,17 @@ func (expQ *ExporterQueue) getCurrentExporter() *Exporter {
 }
 
 func (expQ *ExporterQueue) findExporter(exp *Exporter) int {
-	for i, args := range expQ.ArgsQueue {
-		if reflect.DeepEqual(args, exp.Args) {
+	// reverse search to find first the ones not executing
+	for i := len(expQ.ArgsQueue) - 1; i >= 0; i-- {
+		if reflect.DeepEqual(expQ.ArgsQueue[i], exp.Args) {
 			return i
 		}
 	}
 	return -1
+}
+
+func getFreePort() string {
+	l, _ := net.Listen("tcp", ":0")
+	defer l.Close()
+	return l.Addr().String()[4:]
 }

@@ -3,7 +3,7 @@
     "monitor": "192.168.56.22:9090",
     "healWaitSeconds": 30,
     "exporters": {
-        "slurm": {
+        "SLURM": {
             "create": "scripts/create_slurm_exporter.sh",
             "destroy": "scripts/destroy_slurm_exporter.sh"
         }
