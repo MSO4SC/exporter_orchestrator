@@ -17,13 +17,21 @@ var (
 	warning *log.Logger
 	debug   *log.Logger
 
-	ERROR  func(string)
+	// ERROR prints input as log of type error
+	ERROR func(string)
+	// ERRORf prints formatted input as log of type error
 	ERRORf func(string, ...interface{})
-	INFO   func(string)
-	INFOf  func(string, ...interface{})
-	WARN   func(string)
-	WARNf  func(string, ...interface{})
-	DEBUG  func(string)
+	// INFO prints input as log of type info
+	INFO func(string)
+	// INFOf prints formatted input as log of type info
+	INFOf func(string, ...interface{})
+	// WARN prints input as log of type warning
+	WARN func(string)
+	// WARNf prints formatted input as log of type warning
+	WARNf func(string, ...interface{})
+	// DEBUG prints input as a log of type debug
+	DEBUG func(string)
+	// DEBUGf prints formatted input as log of type debug
 	DEBUGf func(string, ...interface{})
 )
 
@@ -49,6 +57,7 @@ func init() {
 	SetLogLevel("info")
 }
 
+// SetLogLevel sets the log verbosity
 func SetLogLevel(l string) {
 	level = l
 	switch level {
@@ -85,22 +94,27 @@ func SetLogLevel(l string) {
 	}
 }
 
+// SetErrorOutput sets the error stream output
 func SetErrorOutput(handle io.Writer) {
 	_error.SetOutput(handle)
 }
 
+// SetInfoOutput sets the info stream output
 func SetInfoOutput(handle io.Writer) {
 	info.SetOutput(handle)
 }
 
+// SetWarningOutput sets the warning stream output
 func SetWarningOutput(handle io.Writer) {
 	warning.SetOutput(handle)
 }
 
+// SetDebugOutput sets the debug stream output
 func SetDebugOutput(handle io.Writer) {
 	debug.SetOutput(handle)
 }
 
+// Logger is a handler wrapper
 func Logger(inner http.Handler, name string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()

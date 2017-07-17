@@ -13,6 +13,7 @@ import (
 	"time"
 )
 
+// Memory stores the different queues of exporters
 type Memory struct {
 	exporterQueues map[string]*ExporterQueue
 	quitHealing    chan struct{}
@@ -25,50 +26,62 @@ func init() {
 	healingURL = "http://" + config.Monitor + "/api/v1/query?query=up"
 }
 
+// NewMemory creates a new Memory object
 func NewMemory() *Memory {
 	return &Memory{
-		exporterQueues: make(map[string]*ExporterQueue, 0),
+		exporterQueues: make(map[string]*ExporterQueue),
 		quitHealing:    make(chan struct{}),
 	}
 }
 
+// Encode writes the queues as a json in the w writer
 func (memo *Memory) Encode(w io.Writer) error {
 	return json.NewEncoder(w).Encode(memo.exporterQueues)
 }
 
+// LoadFromFile reads filename and import its data to a Memory object
 func (memo *Memory) LoadFromFile(filename string) error {
 	raw, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return err
 	}
 
-	err = json.Unmarshal(raw, &memo.exporterQueues)
-	if err != nil {
-		return err
-	}
-
-	return err
+	return json.Unmarshal(raw, &memo.exporterQueues)
 }
 
+// SaveToFile push the Memory queues into the file filename
 func (memo *Memory) SaveToFile(filename string) error {
+	// Open file and defer close
 	var file *os.File
-	var err error
-	if _, err = os.Stat("filename"); os.IsNotExist(err) {
+	if _, err := os.Stat("filename"); os.IsNotExist(err) {
 		file, err = os.Create(filename)
 		if err != nil {
 			return err
 		}
 	} else {
 		file, err = os.Open(filename)
+		if err != nil {
+			return err
+		}
 	}
+	defer func() {
+		if err := file.Close(); err != nil {
+			ERROR("couldn't close memory file: " + err.Error())
+		}
+	}()
 
-	defer file.Close()
+	// Write file and handle errors
 	w := bufio.NewWriter(file)
-	err = memo.Encode(w)
-	w.Flush()
-	return err
+	if err := memo.Encode(w); err != nil {
+		return err
+	} else if err := w.Flush(); err != nil {
+		return err
+	}
+	return nil
 }
 
+// AddExporterInstance append a new instance of an exporter in its queue
+// If the queue does not exists, it creates it and run the new instance
 func (memo *Memory) AddExporterInstance(exporter *Exporter) error {
 	queue, exists := memo.exporterQueues[exporter.Host]
 
@@ -82,6 +95,7 @@ func (memo *Memory) AddExporterInstance(exporter *Exporter) error {
 	return queue.Add(exporter)
 }
 
+// RemoveExporterInstance deletes an exporter instance from its queue.
 func (memo *Memory) RemoveExporterInstance(exporter *Exporter) error {
 	queue, exists := memo.exporterQueues[exporter.Host]
 
@@ -110,38 +124,20 @@ func (memo *Memory) StartHealing(d time.Duration) {
 		for {
 			select {
 			case <-ticker.C:
-				response, err := http.Get(healingURL)
+				exporters, err := checkState(healingURL)
 				if err != nil {
-					ERROR("healing failed: " + err.Error())
+					ERROR("getting exporters state failed: " + err.Error())
 					continue
-				}
-				var decoded map[string]interface{}
-				if err := json.NewDecoder(response.Body).Decode(&decoded); err != nil {
-					ERROR("healing failed: " + err.Error())
-					continue
-				}
-				if err := response.Body.Close(); err != nil {
-					ERROR("healing failed: " + err.Error())
-					continue
-				}
-
-				result := decoded["data"].(map[string]interface{})["result"].([]interface{})
-				exporters := make(map[string]bool)
-				for _, entry := range result {
-					val, err := strconv.ParseBool(entry.(map[string]interface{})["value"].([]interface{})[1].(string))
-					if err != nil {
-						ERROR("up metric: " + err.Error())
-						continue
-					}
-					exporters[entry.(map[string]interface{})["metric"].(map[string]interface{})["job"].(string)] = val
 				}
 
 				memo.Lock()
 				for _, queue := range memo.exporterQueues {
 					isUp, exists := exporters[queue.Host]
-					queue.Heal(exists, isUp)
+					err := queue.Heal(exists, isUp)
+					if err != nil {
+						ERROR("healing: " + err.Error())
+					}
 				}
-				DEBUG("Healed!")
 				memo.Unlock()
 			case <-memo.quitHealing:
 				ticker.Stop()
@@ -149,4 +145,33 @@ func (memo *Memory) StartHealing(d time.Duration) {
 			}
 		}
 	}()
+}
+
+func checkState(url string) (map[string]bool, error) {
+	response, err := http.Get(healingURL)
+	if err != nil {
+		return nil, err
+	}
+
+	var decoded map[string]interface{}
+	if err := json.NewDecoder(response.Body).Decode(&decoded); err != nil {
+		return nil, err
+	}
+
+	if err := response.Body.Close(); err != nil {
+		return nil, err
+	}
+
+	result := decoded["data"].(map[string]interface{})["result"].([]interface{})
+	exporters := make(map[string]bool)
+	for _, entry := range result {
+		val, err := strconv.ParseBool(entry.(map[string]interface{})["value"].([]interface{})[1].(string))
+		if err != nil {
+			WARN("up metric: " + err.Error())
+			continue
+		}
+		exporters[entry.(map[string]interface{})["metric"].(map[string]interface{})["job"].(string)] = val
+	}
+
+	return exporters, nil
 }

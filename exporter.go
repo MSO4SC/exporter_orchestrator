@@ -8,6 +8,7 @@ import (
 	"time"
 )
 
+// Exporter holds an exporter information
 type Exporter struct {
 	Host       string            `json:"host"`
 	Type       string            `json:"type"`
@@ -15,6 +16,7 @@ type Exporter struct {
 	Args       map[string]string `json:"args"`
 }
 
+// Create runs a new exporter
 func (exporter *Exporter) Create(listenPort string) error {
 	cmd := exec.Command(config.ExportersScripts[exporter.Type]["create"],
 		listenPort,
@@ -30,6 +32,7 @@ func (exporter *Exporter) Create(listenPort string) error {
 	return err
 }
 
+// Destroy stops an existing exporter
 func (exporter *Exporter) Destroy(listenPort string) error {
 	cmd := exec.Command(config.ExportersScripts[exporter.Type]["destroy"],
 		listenPort,
@@ -53,17 +56,22 @@ func (exporter *Exporter) belongsToQueue(queue *ExporterQueue) bool {
 	return true
 }
 
+// ExporterQueue is a queue of similar exporters.
+// These are exporters that gets metrics from the same
+// HPC but can have different credentials.
+// The top should be always up and running.
 type ExporterQueue struct {
 	Host         string              `json:"host"`
 	Type         string              `json:"type"`
 	ListenPort   string              `json:"listen-port"`
-	Persistent   bool                `json:"persistent"`
 	Dependencies uint                `json:"dep"`
+	Start        int64               `json:"start"`
 	ArgsQueue    []map[string]string `json:"queue"`
 	Exec         bool                `json:"Exec"`
-	Start        int64               `json:"start"`
+	Persistent   bool                `json:"persistent"`
 }
 
+// NewExporterQueue creates a new exporter queue
 func NewExporterQueue(exp *Exporter) *ExporterQueue {
 	return &ExporterQueue{
 		Host:         exp.Host,
@@ -76,10 +84,12 @@ func NewExporterQueue(exp *Exporter) *ExporterQueue {
 	}
 }
 
+// IsUP returns true if the top is running
 func (expQ *ExporterQueue) IsUP() bool {
 	return expQ.Exec
 }
 
+// Up runs the top exporter in the queue
 func (expQ *ExporterQueue) Up() error {
 	if expQ.Exec {
 		return nil
@@ -92,6 +102,7 @@ func (expQ *ExporterQueue) Up() error {
 	return err
 }
 
+// Down stops the top exporter in the queue
 func (expQ *ExporterQueue) Down() error {
 	if !expQ.Exec {
 		return nil
@@ -101,6 +112,8 @@ func (expQ *ExporterQueue) Down() error {
 	return err
 }
 
+// Heal check if the top exporter is running and start it otherwise
+// Only start the healing after some time creating the exporter
 func (expQ *ExporterQueue) Heal(exists, isUp bool) error {
 	if time.Now().Unix()-expQ.Start < config.WaitBeforeHealSeconds {
 		return nil
@@ -157,33 +170,23 @@ func (expQ *ExporterQueue) Remove(exp *Exporter) error {
 		return errors.New("cannot remove exporter, it doesn't exists in the queue")
 	}
 
-	// Remove current running instance on a non persistent exporter
-	if i == 0 && expQ.IsUP() {
-		err := expQ.Down()
-		if err == nil {
-			expQ.Dependencies--
-			if expQ.Dependencies == 0 {
-				expQ.ArgsQueue = make([]map[string]string, 0)
-			} else {
-				expQ.ArgsQueue = expQ.ArgsQueue[1:]
-			}
+	// Remove instance on a non persistent exporter
+	if i == 0 {
+		if err := expQ.Down(); err != nil {
+			return err
 		}
-		return err
 	}
-
-	// Remove not running instance on a non persistent exporter
 	expQ.Dependencies--
 	if expQ.Dependencies == 0 {
 		expQ.ArgsQueue = make([]map[string]string, 0)
+	} else if i == 0 {
+		expQ.ArgsQueue = expQ.ArgsQueue[1:]
+	} else if i == (len(expQ.ArgsQueue) - 1) {
+		expQ.ArgsQueue = expQ.ArgsQueue[:i]
 	} else {
-		if i < (len(expQ.ArgsQueue) - 1) {
-			expQ.ArgsQueue = append(expQ.ArgsQueue[:i], expQ.ArgsQueue[i+1:]...)
-		} else {
-			expQ.ArgsQueue = expQ.ArgsQueue[:i]
-		}
+		expQ.ArgsQueue = append(expQ.ArgsQueue[:i], expQ.ArgsQueue[i+1:]...)
 	}
 	return nil
-
 }
 
 func (expQ *ExporterQueue) getCurrentExporter() *Exporter {
@@ -207,6 +210,10 @@ func (expQ *ExporterQueue) findExporter(exp *Exporter) int {
 
 func getFreePort() string {
 	l, _ := net.Listen("tcp", ":0")
-	defer l.Close()
+	defer func() {
+		if err := l.Close(); err != nil {
+			WARN("couldn't close new port to use " + l.Addr().String()[4:])
+		}
+	}()
 	return l.Addr().String()[4:]
 }

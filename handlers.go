@@ -16,23 +16,13 @@ var (
 
 func init() {
 	memory = NewMemory()
-	memory.LoadFromFile(config.StorageFileName)
+	if err := memory.LoadFromFile(config.StorageFileName); err != nil {
+		WARN("couldn't load memory file: " + err.Error())
+	}
 	memory.StartHealing(30 * time.Second)
 }
 
-func Index(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-
-	memory.Lock()
-	defer memory.Unlock()
-	if err := memory.Encode(w); err != nil {
-		encodeError(w, http.StatusNotFound, err)
-		ERROR(err.Error())
-		return
-	}
-}
-
+// ExportersIndex handler, returns the memory of the orchestrator
 func ExportersIndex(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -60,7 +50,6 @@ curl -X POST \
 	"type": "SLURM",
 	"persistent": true,
 	"args": [
-		"listen-port": ":8080",
 		"user": "[USER]",
 		"pass": "[PASS]",
 		"tz": "Europe/Madrid",
@@ -132,40 +121,15 @@ func modifyExporter(w http.ResponseWriter,
 	w.WriteHeader(successStatus)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
-	memory.SaveToFile(config.StorageFileName)
-}
-
-func encodeError(w http.ResponseWriter, httpCode int, err error) {
-
-	w.WriteHeader(httpCode)
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	if err := json.NewEncoder(w).Encode(jsonErr{Code: httpCode, Text: err.Error()}); err != nil {
-		panic(err)
+	if err := memory.SaveToFile(config.StorageFileName); err != nil {
+		ERROR("saving new memory data: " + err.Error())
 	}
 }
 
-// func TodoShow(w http.ResponseWriter, r *http.Request) {
-// 	vars := mux.Vars(r)
-// 	var todoId int
-// 	var err error
-// 	if todoId, err = strconv.Atoi(vars["todoId"]); err != nil {
-// 		panic(err)
-// 	}
-// 	todo := RepoFindTodo(todoId)
-// 	if todo.Id > 0 {
-// 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-// 		w.WriteHeader(http.StatusOK)
-// 		if err := json.NewEncoder(w).Encode(todo); err != nil {
-// 			panic(err)
-// 		}
-// 		return
-// 	}
-
-// 	// If we didn't find it, 404
-// 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-// 	w.WriteHeader(http.StatusNotFound)
-// 	if err := json.NewEncoder(w).Encode(jsonErr{Code: http.StatusNotFound, Text: "Not Found"}); err != nil {
-// 		panic(err)
-// 	}
-
-// }
+func encodeError(w http.ResponseWriter, httpCode int, err error) {
+	w.WriteHeader(httpCode)
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	if err2 := json.NewEncoder(w).Encode(jsonErr{Code: httpCode, Text: err.Error()}); err2 != nil {
+		panic(err2)
+	}
+}

@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	SetLogLevel("debug")
+	SetLogLevel(config.LogLevel)
 
 	router := NewRouter()
 	log.Fatal(http.ListenAndServe(":8079", router))

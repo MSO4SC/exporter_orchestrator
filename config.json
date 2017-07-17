@@ -7,5 +7,6 @@
             "create": "scripts/create_slurm_exporter.sh",
             "destroy": "scripts/destroy_slurm_exporter.sh"
         }
-    }
+    },
+    "logLevel": "debug"
 }

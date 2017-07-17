@@ -5,13 +5,16 @@ import (
 	"io/ioutil"
 )
 
+// Config holds the application configuration
 type Config struct {
 	StorageFileName       string                       `json:"storageFile"`
 	Monitor               string                       `json:"monitor"`
 	ExportersScripts      map[string]map[string]string `json:"exporters"`
 	WaitBeforeHealSeconds int64                        `json:"healWaitSeconds"`
+	LogLevel              string                       `json:"logLevel"`
 }
 
+// LoadConfig reads the config file parsing its information
 func LoadConfig() *Config {
 	config := &Config{
 		ExportersScripts: make(map[string]map[string]string),

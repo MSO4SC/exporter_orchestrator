@@ -2,6 +2,7 @@ package main
 
 import "net/http"
 
+// Route represents a server route
 type Route struct {
 	Name        string
 	Method      string
@@ -9,6 +10,7 @@ type Route struct {
 	HandlerFunc http.HandlerFunc
 }
 
+// Routes holds all the server routes
 type Routes []Route
 
 var routes = Routes{
@@ -16,7 +18,7 @@ var routes = Routes{
 		"Index",
 		"GET",
 		"/",
-		Index,
+		ExportersIndex,
 	},
 	Route{
 		"ExportersIndex",
@@ -36,10 +38,4 @@ var routes = Routes{
 		"/exporters/remove",
 		RemoveExporter,
 	},
-	// Route{
-	// 	"TodoShow",
-	// 	"GET",
-	// 	"/todos/{todoId}",
-	// 	TodoShow,
-	// },
 }
