@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -17,7 +18,7 @@ var (
 func init() {
 	memory = NewMemory()
 	if err := memory.LoadFromFile(config.StorageFileName); err != nil {
-		WARN("couldn't load memory file: " + err.Error())
+		fmt.Println("Couldn't load memory file: " + err.Error())
 	}
 	memory.StartHealing(30 * time.Second)
 }
