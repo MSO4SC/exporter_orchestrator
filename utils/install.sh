@@ -22,4 +22,4 @@ fi
 go install github.com/mso4sc/exporter_orchestrator
 
 cp $GOPATH/src/github.com/mso4sc/exporter_orchestrator/config.json $1/config.json
-cp $GOPATH/src/github.com/mso4sc/exporter_orchestrator/scripts $1/scripts
+cp -r $GOPATH/src/github.com/mso4sc/exporter_orchestrator/scripts/* $1/scripts/

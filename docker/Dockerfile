@@ -28,11 +28,10 @@ RUN apk add --update --no-cache git
 RUN go get github.com/mso4sc/exporter_orchestrator
 
 # Install slurm exporter
-RUN $GOPATH/src/github.com/mso4sc/exporter_orchestrator/utils/install.sh $(pwd)
+RUN /bin/bash $GOPATH/src/github.com/mso4sc/exporter_orchestrator/utils/install.sh $(pwd)
 RUN mkdir -p /mso4sc/targets
 
 # Shared volume
-
 VOLUME ['/mso4sc']
 
 EXPOSE 8079

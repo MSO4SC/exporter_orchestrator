@@ -31,7 +31,6 @@ curl -X POST \
   http://localhost:8079/exporters/add \
   -H 'cache-control: no-cache' \
   -H 'content-type: application/json' \
-  -H 'postman-token: 1474fc98-cf3a-87fb-31f4-8c0c9236da6c' \
   -d '{
 	"host": "ft2.cesga.es",
 	"type": "SLURM",
@@ -56,7 +55,6 @@ curl -X POST \
   http://localhost:8079/exporters/remove \
   -H 'cache-control: no-cache' \
   -H 'content-type: application/json' \
-  -H 'postman-token: 28ec12dc-772e-db61-e286-a24690fabd80' \
   -d '{
 	"host": "ft2.cesga.es",
 	"type": "slurm",
