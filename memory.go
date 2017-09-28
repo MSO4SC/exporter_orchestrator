@@ -11,19 +11,16 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // Memory stores the different queues of exporters
 type Memory struct {
 	exporterQueues map[string]*ExporterQueue
 	quitHealing    chan struct{}
+	healingURL     string
 	sync.Mutex
-}
-
-var healingURL string
-
-func init() {
-	healingURL = "http://" + config.Monitor + "/api/v1/query?query=up"
 }
 
 // NewMemory creates a new Memory object
@@ -31,6 +28,7 @@ func NewMemory() *Memory {
 	return &Memory{
 		exporterQueues: make(map[string]*ExporterQueue),
 		quitHealing:    make(chan struct{}),
+		healingURL:     "http://" + *monitor + "/api/v1/query?query=up",
 	}
 }
 
@@ -46,6 +44,16 @@ func (memo *Memory) LoadFromFile(filename string) error {
 		return err
 	}
 
+	// // FIXME(emepetres): Code to restart the Start time of each
+	// // queue to current time. Right now is commented because probably
+	// // is not needed.
+	// err = json.Unmarshal(raw, &memo.exporterQueues)
+	// if err == nil {
+	// 	for _, queue := range memo.exporterQueues {
+	// 		queue.Start = time.Now().Unix()
+	// 	}
+	// }
+	// return err
 	return json.Unmarshal(raw, &memo.exporterQueues)
 }
 
@@ -66,7 +74,7 @@ func (memo *Memory) SaveToFile(filename string) error {
 	}
 	defer func() {
 		if err := file.Close(); err != nil {
-			ERROR("couldn't close memory file: " + err.Error())
+			log.Errorf("couldn't close memory file: %s", err.Error())
 		}
 	}()
 
@@ -124,9 +132,9 @@ func (memo *Memory) StartHealing(d time.Duration) {
 		for {
 			select {
 			case <-ticker.C:
-				exporters, err := checkState(healingURL)
+				exporters, err := memo.checkState()
 				if err != nil {
-					ERROR("getting exporters state failed: " + err.Error())
+					log.Errorf("getting exporters state failed: %s", err.Error())
 					continue
 				}
 
@@ -135,7 +143,7 @@ func (memo *Memory) StartHealing(d time.Duration) {
 					isUp, exists := exporters[queue.Host]
 					err := queue.Heal(exists, isUp)
 					if err != nil {
-						ERROR("healing: " + err.Error())
+						log.Error("healing: %s", err.Error())
 					}
 				}
 				memo.Unlock()
@@ -147,8 +155,8 @@ func (memo *Memory) StartHealing(d time.Duration) {
 	}()
 }
 
-func checkState(url string) (map[string]bool, error) {
-	response, err := http.Get(healingURL)
+func (memo *Memory) checkState() (map[string]bool, error) {
+	response, err := http.Get(memo.healingURL)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +175,7 @@ func checkState(url string) (map[string]bool, error) {
 	for _, entry := range result {
 		val, err := strconv.ParseBool(entry.(map[string]interface{})["value"].([]interface{})[1].(string))
 		if err != nil {
-			WARN("up metric: " + err.Error())
+			log.Warnf("up metric: ", err.Error())
 			continue
 		}
 		exporters[entry.(map[string]interface{})["metric"].(map[string]interface{})["job"].(string)] = val

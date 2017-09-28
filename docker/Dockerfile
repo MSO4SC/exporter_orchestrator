@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # Copyright 2017 MSO4SC - javier.carnero@atos.net
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,9 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-SESSION=$(echo $2 | sed 's/\./-/g')
+FROM golang:1.9-alpine
 
-rm /opt/prometheus/core/targets/$SESSION.json
+MAINTAINER javier.carnero@atos.net
 
-tmux send-keys -t $SESSION:0 'C-c'
-tmux kill-session -t $SESSION
+RUN mkdir /app
+WORKDIR /app
+
+# Install bash, bash-completion and git
+RUN apk add --update --no-cache bash
+RUN apk add --update --no-cache bash-completion
+RUN apk add --update --no-cache git
+
+# Get exporter orchestrator
+RUN go get github.com/mso4sc/exporter_orchestrator
+
+# Install slurm exporter
+RUN $GOPATH/src/github.com/mso4sc/exporter_orchestrator/utils/install.sh $(pwd)
+RUN mkdir -p /mso4sc/targets
+
+# Shared volume
+
+VOLUME ['/mso4sc']
+
+EXPOSE 8079
+
+ENTRYPOINT ["exporter_orchestrator", "-listen-address", ":8079"]

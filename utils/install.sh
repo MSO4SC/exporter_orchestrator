@@ -14,9 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-SESSION=$(echo $2 | sed 's/\./-/g')
+if [[ $# -eq 0 ]] ; then
+    echo 'Usage: '$0' WORKDIR' 
+    exit 1
+fi
 
-rm /opt/prometheus/core/targets/$SESSION.json
+go install github.com/mso4sc/exporter_orchestrator
 
-tmux send-keys -t $SESSION:0 'C-c'
-tmux kill-session -t $SESSION
+cp $GOPATH/src/github.com/mso4sc/exporter_orchestrator/config.json $1/config.json
+cp $GOPATH/src/github.com/mso4sc/exporter_orchestrator/scripts $1/scripts

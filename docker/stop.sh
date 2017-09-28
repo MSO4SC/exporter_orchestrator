@@ -14,9 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-SESSION=$(echo $2 | sed 's/\./-/g')
+if [[ $# < 1 ]] ; then
+    echo 'Usage: '$0' <ID>' 
+    exit 1
+fi
 
-rm /opt/prometheus/core/targets/$SESSION.json
-
-tmux send-keys -t $SESSION:0 'C-c'
-tmux kill-session -t $SESSION
+docker stop $1

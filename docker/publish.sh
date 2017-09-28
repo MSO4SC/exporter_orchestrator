@@ -14,4 +14,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-go install github.com/mso4sc/exporter_orchestrator
+docker login
+docker push mso4sc/exporter_orchestrator

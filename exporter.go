@@ -6,6 +6,8 @@ import (
 	"os/exec"
 	"reflect"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // Exporter holds an exporter information
@@ -18,7 +20,7 @@ type Exporter struct {
 
 // Create runs a new exporter
 func (exporter *Exporter) Create(listenPort string) error {
-	cmd := exec.Command(config.ExportersScripts[exporter.Type]["create"],
+	cmd := exec.Command(*workDir+config.ExportersScripts[exporter.Type]["create"],
 		listenPort,
 		exporter.Host,
 		exporter.Args["user"],
@@ -27,14 +29,14 @@ func (exporter *Exporter) Create(listenPort string) error {
 		exporter.Args["log"])
 	err := cmd.Run()
 	if err != nil {
-		ERROR(err.Error())
+		log.Error(err.Error())
 	}
 	return err
 }
 
 // Destroy stops an existing exporter
 func (exporter *Exporter) Destroy(listenPort string) error {
-	cmd := exec.Command(config.ExportersScripts[exporter.Type]["destroy"],
+	cmd := exec.Command(*workDir+config.ExportersScripts[exporter.Type]["destroy"],
 		listenPort,
 		exporter.Host,
 		exporter.Args["user"],
@@ -43,7 +45,7 @@ func (exporter *Exporter) Destroy(listenPort string) error {
 		exporter.Args["log"])
 	err := cmd.Run()
 	if err != nil {
-		ERROR(err.Error())
+		log.Error(err.Error())
 	}
 	return err
 }
@@ -121,7 +123,7 @@ func (expQ *ExporterQueue) Heal(exists, isUp bool) error {
 
 	if !expQ.IsUP() || !exists || !isUp {
 		expQ.Exec = false
-		WARN("healing " + expQ.Host + "...")
+		log.Warnf("healing %s ...", expQ.Host)
 		return expQ.Up()
 	}
 
@@ -212,7 +214,7 @@ func getFreePort() string {
 	l, _ := net.Listen("tcp", ":0")
 	defer func() {
 		if err := l.Close(); err != nil {
-			WARN("couldn't close new port to use " + l.Addr().String()[4:])
+			log.Warnf("couldn't close new port to use %s", l.Addr().String()[4:])
 		}
 	}()
 	return l.Addr().String()[4:]

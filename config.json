@@ -1,12 +1,10 @@
 {
     "storageFile": "data.json",
-    "monitor": "192.168.56.22:9090",
     "healWaitSeconds": 30,
     "exporters": {
         "SLURM": {
-            "create": "scripts/create_slurm_exporter.sh",
-            "destroy": "scripts/destroy_slurm_exporter.sh"
+            "create": "scripts/create_slurm_exporter_container.sh",
+            "destroy": "scripts/destroy_slurm_exporter_container.sh"
         }
-    },
-    "logLevel": "debug"
+    }
 }

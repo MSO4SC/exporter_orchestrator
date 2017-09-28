@@ -14,9 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-SESSION=$(echo $2 | sed 's/\./-/g')
+SESSION=$(echo $2 | sed 's/\./-/g') # Get HOST as session name (container name in this case)
+NAME="slurmExp_"$SESSION
 
-rm /opt/prometheus/core/targets/$SESSION.json
+rm /mso4sc/targets/$SESSION.json
 
-tmux send-keys -t $SESSION:0 'C-c'
-tmux kill-session -t $SESSION
+docker stop $NAME
+
+return $?

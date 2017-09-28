@@ -14,9 +14,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-SESSION=$(echo $2 | sed 's/\./-/g')
+SESSION=$(echo $2 | sed 's/\./-/g') # Get HOST as session name (container name in this case)
+NAME="slurmExp_"$SESSION
 
-rm /opt/prometheus/core/targets/$SESSION.json
+docker run -d -p 9100 --name $NAME \
+          mso4sc/slurm_exporter \
+            -host $2 -ssh-user $3 -ssh-password $4 -countrytz $5 -log-level=$6
 
-tmux send-keys -t $SESSION:0 'C-c'
-tmux kill-session -t $SESSION
+status=$?
+if [ $status == 0 ]; then
+  PORT="$(docker ps |grep $NAME|sed 's/.*0.0.0.0://g'|sed 's/->.*//g')"
+  cat > /mso4sc/targets/$SESSION.json <<- EOM
+[
+  {
+    "targets": ["localhost:$PORT"],
+    "labels": {
+      "env": "canary",
+      "job": "$2"
+    }
+  }
+]
+EOM
+fi

@@ -14,4 +14,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-go get github.com/mso4sc/exporter_orchestrator
+if [[ $# < 1 ]] ; then
+    echo 'Usage: '$0' -monitor-host=<HOST:MPORT> [-work-dir=<LOGLEVEL>] [-log-level=<LOGLEVEL>]' 
+    exit 1
+fi
+
+ARGS=$1
+if [[ $# > 1 ]] ; then
+	ARGS=$ARGS' '$2
+fi
+if [[ $# > 2 ]] ; then
+	ARGS=$ARGS' '$3
+fi
+
+#### docker run --rm -v /lib64:/lib64 -v /usr:/usr -v /lib:/lib -v /var/run/docker.sock:/var/run/docker.sock alpine docker --version
+
+docker run --rm -d -p 8079:8079  \
+	-v /lib64:/lib64 -v /usr:/usr -v /lib:/lib -v /var/run/docker.sock:/var/run/docker.sock \
+	mso4sc/slurm_exporter $ARGS

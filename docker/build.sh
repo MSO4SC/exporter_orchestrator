@@ -14,9 +14,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-SESSION=$(echo $2 | sed 's/\./-/g')
-
-rm /opt/prometheus/core/targets/$SESSION.json
-
-tmux send-keys -t $SESSION:0 'C-c'
-tmux kill-session -t $SESSION
+docker build -t mso4sc/exporter_orchestrator .
