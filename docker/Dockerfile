@@ -14,7 +14,7 @@
 
 FROM golang:1.9-alpine
 
-MAINTAINER javier.carnero@atos.net
+LABEL maintainer="javier.carnero@atos.net"
 
 RUN mkdir /app
 WORKDIR /app
