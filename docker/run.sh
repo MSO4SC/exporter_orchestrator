@@ -29,6 +29,6 @@ fi
 
 #### docker run --rm -v /lib64:/lib64 -v /usr:/usr -v /lib:/lib -v /var/run/docker.sock:/var/run/docker.sock alpine docker --version
 
-docker run --rm -p 8079:8079  \
-	-v /lib64:/lib64 -v /usr:/usr -v /lib:/lib -v /var/run/docker.sock:/var/run/docker.sock \
+docker run --rm -d -p 8079:8079 \
+	-v /lib64:/lib64 -v /usr:/usr -v /lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu -v /var/run/docker.sock:/var/run/docker.sock \
 	mso4sc/exporter_orchestrator $ARGS
