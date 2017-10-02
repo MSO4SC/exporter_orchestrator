@@ -24,3 +24,4 @@ go install github.com/mso4sc/exporter_orchestrator
 cp $GOPATH/src/github.com/mso4sc/exporter_orchestrator/config.json $1/config.json
 mkdir $1/scripts
 cp $GOPATH/src/github.com/mso4sc/exporter_orchestrator/scripts/* $1/scripts
+chmod +x $1/scripts/*
