@@ -35,12 +35,12 @@ curl -X POST \
 	"host": "ft2.cesga.es",
 	"type": "SLURM",
 	"persistent": true,
-	"args": [
+	"args": {
 		"user": "[USER]",
 		"pass": "[PASS]",
 		"tz": "Europe/Madrid",
 		"log": "debug"
-	]
+	}
 }'
 */
 func AddExporter(w http.ResponseWriter, r *http.Request) {
@@ -59,12 +59,12 @@ curl -X POST \
 	"host": "ft2.cesga.es",
 	"type": "slurm",
 	"persistent": true,
-	"args": [
+	"args": {
 		"-ssh-user [USER]",
 		"-ssh-password [PASS]",
 		"-countrytz Europe/Madrid",
 		"-log.level=warn"
-	]
+	}
 }'
 */
 func RemoveExporter(w http.ResponseWriter, r *http.Request) {
