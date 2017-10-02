@@ -143,7 +143,7 @@ func (memo *Memory) StartHealing(d time.Duration) {
 					isUp, exists := exporters[queue.Host]
 					err := queue.Heal(exists, isUp)
 					if err != nil {
-						log.Error("healing: %s", err.Error())
+						log.Errorf("healing: %s", err.Error())
 					}
 				}
 				memo.Unlock()

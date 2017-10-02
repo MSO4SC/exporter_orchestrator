@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Copyright 2017 MSO4SC - javier.carnero@atos.net
 #

@@ -19,7 +19,7 @@ type Exporter struct {
 }
 
 // Create runs a new exporter
-func (exporter *Exporter) Create(listenPort string) error {
+func (exporter *Exporter) create(listenPort string) error {
 	cmd := exec.Command(*workDir+config.ExportersScripts[exporter.Type]["create"],
 		listenPort,
 		exporter.Host,
@@ -27,15 +27,11 @@ func (exporter *Exporter) Create(listenPort string) error {
 		exporter.Args["pass"],
 		exporter.Args["tz"],
 		exporter.Args["log"])
-	err := cmd.Run()
-	if err != nil {
-		log.Error(err.Error())
-	}
-	return err
+	return cmd.Run()
 }
 
 // Destroy stops an existing exporter
-func (exporter *Exporter) Destroy(listenPort string) error {
+func (exporter *Exporter) destroy(listenPort string) error {
 	cmd := exec.Command(*workDir+config.ExportersScripts[exporter.Type]["destroy"],
 		listenPort,
 		exporter.Host,
@@ -43,11 +39,7 @@ func (exporter *Exporter) Destroy(listenPort string) error {
 		exporter.Args["pass"],
 		exporter.Args["tz"],
 		exporter.Args["log"])
-	err := cmd.Run()
-	if err != nil {
-		log.Error(err.Error())
-	}
-	return err
+	return cmd.Run()
 }
 
 func (exporter *Exporter) belongsToQueue(queue *ExporterQueue) bool {
@@ -96,7 +88,7 @@ func (expQ *ExporterQueue) Up() error {
 	if expQ.Exec {
 		return nil
 	}
-	err := expQ.getCurrentExporter().Create(expQ.ListenPort)
+	err := expQ.getCurrentExporter().create(expQ.ListenPort)
 	expQ.Exec = (err == nil)
 	if expQ.IsUP() {
 		expQ.Start = time.Now().Unix()
@@ -109,7 +101,7 @@ func (expQ *ExporterQueue) Down() error {
 	if !expQ.Exec {
 		return nil
 	}
-	err := expQ.getCurrentExporter().Destroy(expQ.ListenPort)
+	err := expQ.getCurrentExporter().destroy(expQ.ListenPort)
 	expQ.Exec = (err != nil)
 	return err
 }
