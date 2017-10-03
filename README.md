@@ -16,8 +16,12 @@ $GOPATH/src/github.com/mso4sc/slurm_exporter/utils/install.sh
 ```bash
 slurm_exporter -monitor-host=<HOST:MPORT> [-listen-address=:<PORT>] [-log.level=<LOGLEVEL>]
 ```
+### API
+
+TODO  
 
 ### Defaults
 
 PORT: `:8079`  
 LOGLEVEL: `error`  
+
