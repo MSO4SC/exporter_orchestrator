@@ -23,12 +23,13 @@ docker run -d -p 9100 --name $NAME \
 
 status=$?
 if [ $status == 0 ]; then
-  HOST=$(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $NAME)
-  PORT=$(docker ps |grep $NAME|sed 's/.*0.0.0.0://g'|sed 's/->.*//g')
+  #IP=$(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $NAME)
+  HOST_IP=$(/sbin/ip route|grep default|cut -d " " -f 3)
+  PORT=$(docker ps|grep $NAME|sed 's/.*0.0.0.0://g'|sed 's/->.*//g')
   cat > /mso4sc/targets/$SESSION.json <<- EOM
 [
   {
-    "targets": ["$HOST:$PORT"],
+    "targets": ["$HOST_IP:$PORT"],
     "labels": {
       "env": "canary",
       "job": "$2"
