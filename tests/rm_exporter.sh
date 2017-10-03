@@ -7,7 +7,7 @@ curl -X POST \
   -d '{
 	"host": "ft2.cesga.es",
 	"type": "SLURM",
-	"persistent": true,
+	"persistent": false,
 	"args": {
 		"user": "otarijci",
 		"pass": "300tt.yo",

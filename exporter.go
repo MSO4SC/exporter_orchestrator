@@ -146,7 +146,7 @@ func (expQ *ExporterQueue) Add(exp *Exporter) error {
 // If the exporter is the current one, it stops it before deleting.
 func (expQ *ExporterQueue) Remove(exp *Exporter) error {
 	if expQ.Dependencies == 0 {
-		return errors.New("trying to change exporter " + expQ.Host + " with no dependencies left")
+		return errors.New("trying to remove exporter " + expQ.Host + " with no dependencies left")
 	}
 
 	if !exp.belongsToQueue(expQ) {
@@ -154,6 +154,7 @@ func (expQ *ExporterQueue) Remove(exp *Exporter) error {
 	}
 
 	if expQ.Persistent {
+		log.Debug("Trying to remove persistent exporter; Only removing dependency.")
 		expQ.Dependencies--
 		return nil
 	}
