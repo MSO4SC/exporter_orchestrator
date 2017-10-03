@@ -20,7 +20,4 @@ ea994b6b6ac2        mso4sc/exporter_orc...  "exporter_orchestr..."   7 minutes a
 One script in docker folder helps running the image:  
 `run.sh` runs a new exporter orchestrator in a new container. It returns the container ID.
 
-## Development
-The image has auto-build in DockerHub. Nevertheless, two scripts help building and publishing the image. 
-`build.sh` build the image using the Dockerfile  
-`publish.sh` push the image in Docker Hub  
+To build the image locally, the script `build.sh` helps doing it.
