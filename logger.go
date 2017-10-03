@@ -7,8 +7,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// LoggerHttpHandler is a http handler wrapper
-func LoggerHttpHandler(inner http.Handler, name string) http.Handler {
+// LoggerHTTPHandler is a http handler wrapper
+func LoggerHTTPHandler(inner http.Handler, name string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
