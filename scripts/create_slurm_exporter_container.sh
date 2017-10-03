@@ -17,7 +17,7 @@
 SESSION=$(echo $2 | sed 's/\./-/g') # Get HOST as session name (container name in this case)
 NAME="slurmExp_"$SESSION
 
-docker run -d -p 9100 --name $NAME \
+docker run --rm -d -p 9100 --name $NAME \
           mso4sc/slurm_exporter \
             -host $2 -ssh-user $3 -ssh-password $4 -countrytz $5 -log-level=$6
 
@@ -36,5 +36,6 @@ if [ $status == 0 ]; then
     }
   }
 ]
+
 EOM
 fi

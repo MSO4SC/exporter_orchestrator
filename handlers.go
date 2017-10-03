@@ -57,7 +57,7 @@ curl -X POST \
   -H 'content-type: application/json' \
   -d '{
 	"host": "ft2.cesga.es",
-	"type": "slurm",
+	"type": "SLURM",
 	"persistent": true,
 	"args": {
 		"-ssh-user [USER]",

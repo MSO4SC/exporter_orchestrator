@@ -20,5 +20,3 @@ NAME="slurmExp_"$SESSION
 rm /mso4sc/targets/$SESSION.json
 
 docker stop $NAME
-
-return $?
