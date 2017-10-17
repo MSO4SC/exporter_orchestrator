@@ -18,6 +18,7 @@ SESSION=$(echo $2 | sed 's/\./-/g') # Get HOST as session name (container name i
 NAME="slurmExp_"$SESSION
 
 docker run --rm -d -p 9100 --name $NAME \
+          --network=root_default \
           mso4sc/slurm_exporter \
             -host $2 -ssh-user $3 -ssh-password $4 -countrytz $5 -log-level=$6
 
