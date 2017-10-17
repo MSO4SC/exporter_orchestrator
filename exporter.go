@@ -61,7 +61,7 @@ type ExporterQueue struct {
 	Dependencies uint                `json:"dep"`
 	Start        int64               `json:"start"`
 	ArgsQueue    []map[string]string `json:"queue"`
-	Exec         bool                `json:"Exec"`
+	Started      bool                `json:"Exec"`
 	Persistent   bool                `json:"persistent"`
 }
 
@@ -74,23 +74,18 @@ func NewExporterQueue(exp *Exporter) *ExporterQueue {
 		Persistent:   exp.Persistent,
 		Dependencies: 1,
 		ArgsQueue:    []map[string]string{exp.Args},
-		Exec:         false,
+		Started:      false,
 	}
-}
-
-// IsUP returns true if the top is running
-func (expQ *ExporterQueue) IsUP() bool {
-	return expQ.Exec
 }
 
 // Up runs the top exporter in the queue
 func (expQ *ExporterQueue) Up() error {
-	if expQ.Exec {
+	if expQ.Started {
 		return nil
 	}
 	err := expQ.getCurrentExporter().create(expQ.ListenPort)
-	expQ.Exec = (err == nil)
-	if expQ.IsUP() {
+	expQ.Started = (err == nil)
+	if expQ.Started {
 		expQ.Start = time.Now().Unix()
 	}
 	return err
@@ -98,11 +93,11 @@ func (expQ *ExporterQueue) Up() error {
 
 // Down stops the top exporter in the queue
 func (expQ *ExporterQueue) Down() error {
-	if !expQ.Exec {
+	if !expQ.Started {
 		return nil
 	}
 	err := expQ.getCurrentExporter().destroy(expQ.ListenPort)
-	expQ.Exec = (err != nil)
+	expQ.Started = (err != nil)
 	return err
 }
 
@@ -113,9 +108,13 @@ func (expQ *ExporterQueue) Heal(exists, isUp bool) error {
 		return nil
 	}
 
-	if !expQ.IsUP() || !exists || !isUp {
-		expQ.Exec = false
+	if !exists {
+		expQ.Started = false
 		log.Warnf("healing %s ...", expQ.Host)
+		return expQ.Up()
+	} else if !isUp {
+		// TODO(emepetres) use some condition (e.g. time down)
+		expQ.Down()
 		return expQ.Up()
 	}
 
