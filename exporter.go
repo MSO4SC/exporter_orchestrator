@@ -111,11 +111,15 @@ func (expQ *ExporterQueue) Heal(exists, isUp bool) error {
 	if !exists {
 		expQ.Started = false
 		log.Warnf("healing %s ...", expQ.Host)
-		return expQ.Up()
+		// FIXME Commented only for test purposes
+		//return expQ.Up()
+		return nil
 	} else if !isUp {
 		// TODO(emepetres) use some condition (e.g. time down)
-		expQ.Down()
-		return expQ.Up()
+		// FIXME Commented only for test purposes
+		//expQ.Down()
+		//return expQ.Up()
+		return nil
 	}
 
 	return nil
