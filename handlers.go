@@ -98,7 +98,7 @@ func modifyExporter(w http.ResponseWriter,
 	memory.Lock()
 	defer memory.Unlock()
 	if err := modifier(&exporter); err != nil {
-		encodeError(w, http.StatusInternalServerError, err)
+		encodeError(w, http.StatusConflict, err)
 		log.Error(err.Error())
 		return
 	}
